@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MyAssage</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>MyAssage</h1>
+    <div id="authButtons">
+      <button id="loginBtn">Login</button>
+      <button id="signupBtn">Sign up</button>
+      <button id="logoutBtn" style="display:none;">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <textarea id="entryInput" placeholder="Write, Breathe, Share..."></textarea>
+    <button id="submitEntry">Share 🫀</button>
+
+    <div id="entries"></div>
+  </main>
+
+  <!-- Login/Signup Modal -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal">&times;</span>
+      <h2 id="modalTitle">Login</h2>
+      <input type="text" id="modalUsername" placeholder="Username" />
+      <input type="password" id="modalPassword" placeholder="Password" />
+      <button id="modalSubmit">Submit</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
