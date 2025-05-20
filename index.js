@@ -19,6 +19,7 @@ function saveJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
+// Orta katmanlar (middleware)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -27,9 +28,10 @@ app.use(session({
   secret: 'myassage-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 } // 1 day
+  cookie: { maxAge: 24 * 60 * 60 * 1000 } // 1 gün
 }));
 
+// Anasayfa
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
@@ -48,7 +50,7 @@ app.post('/signup', async (req, res) => {
   users.push({ username, password: hashed });
   saveJSON(USERS_FILE, users);
 
-  req.session.user = username;
+  req.session.username = username;
   res.json({ success: true });
 });
 
@@ -56,14 +58,14 @@ app.post('/signup', async (req, res) => {
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const users = loadJSON(USERS_FILE);
-
   const user = users.find(u => u.username === username);
+  
   if (!user) return res.status(401).json({ error: 'Invalid username or password.' });
 
   const match = await bcrypt.compare(password, user.password);
   if (!match) return res.status(401).json({ error: 'Invalid username or password.' });
 
-  req.session.user = username;
+  req.session.username = username;
   res.json({ success: true });
 });
 
@@ -74,26 +76,36 @@ app.post('/logout', (req, res) => {
   });
 });
 
-// Add a new entry/post
+// Yeni gönderi (entry) ekleme
 app.post('/entries', (req, res) => {
-  if (!req.session.user) return res.status(403).json({ error: 'Not logged in' });
+  if (!req.session.username) return res.status(403).json({ error: 'Not logged in' });
 
   const { entry } = req.body;
   if (!entry || entry.trim() === '') return res.status(400).json({ error: 'Empty entry' });
 
   const entries = loadJSON(ENTRIES_FILE);
-  entries.push({ username: req.session.user, text: entry.trim(), time: new Date().toISOString() });
+  entries.push({ username: req.session.username, text: entry.trim(), time: new Date().toISOString() });
   saveJSON(ENTRIES_FILE, entries);
 
   res.json({ success: true });
 });
 
-// Get all entries/posts
-app.get('/entries', (req, res) => {
+// Kullanıcının kendi gönderilerini getir
+app.get('/myposts', (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: 'Unauthorized' });
+
   const entries = loadJSON(ENTRIES_FILE);
-  res.json(entries);
+  const userEntries = entries.filter(e => e.username === req.session.username);
+  res.json({ posts: userEntries });
 });
 
+// Tüm gönderileri getir
+app.get('/allposts', (req, res) => {
+  const entries = loadJSON(ENTRIES_FILE);
+  res.json({ posts: entries });
+});
+
+// Server başlat
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
