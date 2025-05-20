@@ -1,28 +1,26 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
   <title>MyAssage</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="auth-buttons">
+    <button id="loginBtn">Giriş</button>
+    <button id="signupBtn">Kayıt</button>
+  </div>
 
-  <header>
-    <div id="auth-buttons">
-      <button id="login-btn">Giriş</button>
-      <button id="signup-btn">Kayıt</button>
-    </div>
-    <h1>MyAssage</h1>
-  </header>
+  <h1>MyAssage</h1>
+  <textarea id="entry" placeholder="Write, Breathe, Share.."></textarea>
+  <button id="submit">👻</button>
 
-  <main>
-    <textarea id="post-content" placeholder="Write, Breathe, Share..."></textarea>
-    <button id="post-btn" title="Gönder 👻">👻</button>
-  </main>
+  <div class="nav-menu" id="navMenu">
+    <div id="profile">Profil</div>
+    <div id="myPosts">Yazılarım</div>
+  </div>
 
-  <section id="messages"></section>
-
+  <div id="posts"></div>
   <script src="script.js"></script>
 </body>
 </html>
