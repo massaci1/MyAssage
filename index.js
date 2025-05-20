@@ -1,85 +1,82 @@
 const express = require('express');
 const session = require('express-session');
-const fs = require('fs');
+const bcrypt = require('bcrypt');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-app.use(express.static(__dirname + '/public'));
-app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use(session({
-  secret: 'myassage-secret-key',
+  secret: 'your-secret-key',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
+  cookie: { maxAge: 24 * 60 * 60 * 1000 } // 1 day
 }));
 
-const USERS_FILE = path.join(__dirname, 'users.json');
-const ENTRIES_FILE = path.join(__dirname, 'entries.json');
+// In-memory user and posts store (for demonstration; replace with a real DB)
+const users = [];
+const posts = [];
 
-function loadJSON(file) {
-  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf-8')) : [];
-}
-
-function saveJSON(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
-}
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
-});
-
-app.post('/signup', (req, res) => {
+// Signup endpoint
+app.post('/signup', async (req, res) => {
   const { username, password } = req.body;
-  const users = loadJSON(USERS_FILE);
+  if (!username || !password) return res.json({ error: 'Username and password are required.' });
+  if (users.find(u => u.username === username)) return res.json({ error: 'Username already exists.' });
 
-  if (users.find(u => u.username === username)) {
-    return res.status(400).send('Username already exists');
-  }
-
-  users.push({ username, password });
-  saveJSON(USERS_FILE, users);
-  req.session.user = username;
-  res.sendStatus(200);
+  const hashed = await bcrypt.hash(password, 10);
+  users.push({ username, password: hashed });
+  req.session.username = username;
+  res.json({ success: true });
 });
 
-app.post('/login', (req, res) => {
+// Login endpoint
+app.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  const users = loadJSON(USERS_FILE);
+  const user = users.find(u => u.username === username);
+  if (!user) return res.json({ error: 'Invalid username or password.' });
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) return res.json({ error: 'Invalid username or password.' });
 
-  const user = users.find(u => u.username === username && u.password === password);
-  if (!user) {
-    return res.status(401).send('Invalid credentials');
-  }
-
-  req.session.user = username;
-  res.sendStatus(200);
+  req.session.username = username;
+  res.json({ success: true });
 });
 
+// Logout endpoint
 app.post('/logout', (req, res) => {
-  req.session.destroy();
-  res.sendStatus(200);
+  req.session.destroy(() => {
+    res.json({ success: true });
+  });
 });
 
-app.post('/entries', (req, res) => {
-  if (!req.session.user) return res.status(403).send('Not logged in');
+// Post creation endpoint
+app.post('/post', (req, res) => {
+  if (!req.session.username) return res.json({ error: 'You must be logged in to post.' });
+  const { content } = req.body;
+  if (!content || content.trim() === '') return res.json({ error: 'Post content cannot be empty.' });
 
-  const { entry } = req.body;
-  if (!entry) return res.status(400).send('Empty entry');
-
-  const entries = loadJSON(ENTRIES_FILE);
-  entries.push({ username: req.session.user, text: entry, time: new Date().toISOString() });
-  saveJSON(ENTRIES_FILE, entries);
-  res.sendStatus(200);
+  posts.push({
+    content: content.trim(),
+    username: req.session.username,
+    created_at: new Date()
+  });
+  res.json({ success: true });
 });
 
-app.get('/entries', (req, res) => {
-  const entries = loadJSON(ENTRIES_FILE);
-  res.json(entries);
+// Get current user's posts
+app.get('/myposts', (req, res) => {
+  if (!req.session.username) return res.status(401).json({ error: 'Unauthorized' });
+  const userPosts = posts.filter(p => p.username === req.session.username);
+  res.json({ posts: userPosts });
 });
 
+// Get all posts
+app.get('/allposts', (req, res) => {
+  res.json({ posts });
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

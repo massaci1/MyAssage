@@ -1,36 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MyAssage</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
+  <div class="container">
     <h1>MyAssage</h1>
-    <div id="authButtons">
-      <button id="loginBtn">Login</button>
-      <button id="signupBtn">Sign up</button>
-      <button id="logoutBtn" style="display:none;">Logout</button>
+
+    <div id="auth-section">
+      <h2>Kullanıcı Girişi / Kayıt</h2>
+
+      <form id="signup-form">
+        <h3>Kayıt Ol</h3>
+        <input type="text" id="signup-username" placeholder="Kullanıcı adı" required />
+        <input type="password" id="signup-password" placeholder="Şifre" required />
+        <button type="submit">Kayıt Ol</button>
+        <p id="signup-error" class="error"></p>
+      </form>
+
+      <form id="login-form">
+        <h3>Giriş Yap</h3>
+        <input type="text" id="login-username" placeholder="Kullanıcı adı" required />
+        <input type="password" id="login-password" placeholder="Şifre" required />
+        <button type="submit">Giriş Yap</button>
+        <p id="login-error" class="error"></p>
+      </form>
     </div>
-  </header>
 
-  <main>
-    <textarea id="entryInput" placeholder="Write, Breathe, Share..."></textarea>
-    <button id="submitEntry">Share 🫀</button>
+    <div id="user-section" class="hidden">
+      <p>Hoşgeldin, <span id="user-name"></span>! <button id="logout-btn">Çıkış Yap</button></p>
 
-    <div id="entries"></div>
-  </main>
+      <form id="post-form">
+        <textarea id="post-content" rows="3" placeholder="Düşünceni yaz..."></textarea>
+        <button type="submit">Paylaş</button>
+        <p id="post-error" class="error"></p>
+      </form>
 
-  <!-- Login/Signup Modal -->
-  <div id="modal" class="modal">
-    <div class="modal-content">
-      <span id="closeModal">&times;</span>
-      <h2 id="modalTitle">Login</h2>
-      <input type="text" id="modalUsername" placeholder="Username" />
-      <input type="password" id="modalPassword" placeholder="Password" />
-      <button id="modalSubmit">Submit</button>
+      <h3>Paylaşımların</h3>
+      <ul id="my-posts"></ul>
+
+      <h3>Tüm Paylaşımlar</h3>
+      <ul id="all-posts"></ul>
     </div>
   </div>
 

@@ -1,92 +1,135 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const entryInput = document.getElementById('entryInput');
-  const submitEntry = document.getElementById('submitEntry');
-  const entriesDiv = document.getElementById('entries');
-  const loginBtn = document.getElementById('loginBtn');
-  const signupBtn = document.getElementById('signupBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const modal = document.getElementById('modal');
-  const closeModal = document.getElementById('closeModal');
-  const modalTitle = document.getElementById('modalTitle');
-  const modalUsername = document.getElementById('modalUsername');
-  const modalPassword = document.getElementById('modalPassword');
-  const modalSubmit = document.getElementById('modalSubmit');
+const signupForm = document.getElementById('signup-form');
+const loginForm = document.getElementById('login-form');
+const userSection = document.getElementById('user-section');
+const authSection = document.getElementById('auth-section');
 
-  let authMode = 'login';
+const userNameSpan = document.getElementById('user-name');
+const logoutBtn = document.getElementById('logout-btn');
 
-  function loadEntries() {
-    fetch('/entries')
-      .then(res => res.json())
-      .then(entries => {
-        entriesDiv.innerHTML = '';
-        entries.reverse().forEach(entry => {
-          const el = document.createElement('div');
-          el.className = 'entry';
-          el.innerHTML = `<strong>${entry.username}</strong><br>${entry.text}<br><small>${new Date(entry.time).toLocaleString()}</small>`;
-          entriesDiv.appendChild(el);
-        });
-      });
+const postForm = document.getElementById('post-form');
+const postContent = document.getElementById('post-content');
+
+const myPostsList = document.getElementById('my-posts');
+const allPostsList = document.getElementById('all-posts');
+
+const signupError = document.getElementById('signup-error');
+const loginError = document.getElementById('login-error');
+const postError = document.getElementById('post-error');
+
+async function checkSession() {
+  const res = await fetch('/myposts');
+  if (res.status === 401) {
+    // Not logged in
+    authSection.classList.remove('hidden');
+    userSection.classList.add('hidden');
+  } else {
+    authSection.classList.add('hidden');
+    userSection.classList.remove('hidden');
+    const data = await res.json();
+    // Kullanıcı adı göstermek için backend'den alamıyoruz, o yüzden localStorage ile tutacağız.
+    const username = localStorage.getItem('username') || 'Kullanıcı';
+    userNameSpan.textContent = username;
+    loadPosts(data.posts);
+    loadAllPosts();
+  }
+}
+
+function loadPosts(posts) {
+  myPostsList.innerHTML = '';
+  if (posts.length === 0) myPostsList.innerHTML = '<li>Henüz paylaşım yok.</li>';
+  posts.forEach(p => {
+    const li = document.createElement('li');
+    li.textContent = `${p.content} (Paylaşan: ${p.username})`;
+    myPostsList.appendChild(li);
+  });
+}
+
+async function loadAllPosts() {
+  const res = await fetch('/allposts');
+  const data = await res.json();
+  allPostsList.innerHTML = '';
+  if (data.posts.length === 0) allPostsList.innerHTML = '<li>Henüz paylaşım yok.</li>';
+  data.posts.forEach(p => {
+    const li = document.createElement('li');
+    li.textContent = `${p.content} (Paylaşan: ${p.username})`;
+    allPostsList.appendChild(li);
+  });
+}
+
+signupForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  signupError.textContent = '';
+
+  const username = document.getElementById('signup-username').value.trim();
+  const password = document.getElementById('signup-password').value.trim();
+
+  const res = await fetch('/signup', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await res.json();
+  if (data.error) {
+    signupError.textContent = data.error;
+  } else {
+    localStorage.setItem('username', username);
+    await checkSession();
+  }
+});
+
+loginForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  loginError.textContent = '';
+
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+
+  const res = await fetch('/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await res.json();
+  if (data.error) {
+    loginError.textContent = data.error;
+  } else {
+    localStorage.setItem('username', username);
+    await checkSession();
+  }
+});
+
+logoutBtn.addEventListener('click', async () => {
+  await fetch('/logout', { method: 'POST' });
+  localStorage.removeItem('username');
+  await checkSession();
+});
+
+postForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  postError.textContent = '';
+
+  const content = postContent.value.trim();
+  if (!content) {
+    postError.textContent = 'Lütfen bir şeyler yazın.';
+    return;
   }
 
-  submitEntry.addEventListener('click', () => {
-    fetch('/entries', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entry: entryInput.value })
-    })
-    .then(res => {
-      if (res.ok) {
-        entryInput.value = '';
-        loadEntries();
-      } else {
-        alert('You must log in to post.');
-      }
-    });
+  const res = await fetch('/post', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ content })
   });
 
-  loginBtn.addEventListener('click', () => {
-    authMode = 'login';
-    modalTitle.textContent = 'Login';
-    modal.style.display = 'block';
-  });
-
-  signupBtn.addEventListener('click', () => {
-    authMode = 'signup';
-    modalTitle.textContent = 'Sign up';
-    modal.style.display = 'block';
-  });
-
-  logoutBtn.addEventListener('click', () => {
-    fetch('/logout', { method: 'POST' })
-      .then(() => {
-        logoutBtn.style.display = 'none';
-        loginBtn.style.display = '';
-        signupBtn.style.display = '';
-      });
-  });
-
-  modalSubmit.addEventListener('click', () => {
-    const endpoint = authMode === 'signup' ? '/signup' : '/login';
-    fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: modalUsername.value,
-        password: modalPassword.value
-      })
-    }).then(res => {
-      if (res.ok) {
-        modal.style.display = 'none';
-        logoutBtn.style.display = '';
-        loginBtn.style.display = 'none';
-        signupBtn.style.display = 'none';
-        loadEntries();
-      } else {
-        alert('Error: ' + (authMode === 'signup' ? 'Username taken.' : 'Invalid credentials.'));
-      }
-    });
-  });
-
-  closeModal.addEventListener('click', () => modal.style.display = 'none');
-  loadEntries();
+  const data = await res.json();
+  if (data.error) {
+    postError.textContent = data.error;
+  } else {
+    postContent.value = '';
+    await checkSession();
+  }
 });
+
+// Sayfa yüklenince oturum kontrolü yap
+checkSession();
