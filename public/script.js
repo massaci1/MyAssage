@@ -1,135 +1,85 @@
-const signupForm = document.getElementById('signup-form');
-const loginForm = document.getElementById('login-form');
-const userSection = document.getElementById('user-section');
-const authSection = document.getElementById('auth-section');
-
-const userNameSpan = document.getElementById('user-name');
-const logoutBtn = document.getElementById('logout-btn');
-
-const postForm = document.getElementById('post-form');
+const loginBtn = document.getElementById('login-btn');
+const signupBtn = document.getElementById('signup-btn');
+const postBtn = document.getElementById('post-btn');
 const postContent = document.getElementById('post-content');
+const messages = document.getElementById('messages');
 
-const myPostsList = document.getElementById('my-posts');
-const allPostsList = document.getElementById('all-posts');
+function showMessage(text, isError = true) {
+  messages.textContent = text;
+  messages.style.color = isError ? 'red' : 'green';
+  setTimeout(() => messages.textContent = '', 4000);
+}
 
-const signupError = document.getElementById('signup-error');
-const loginError = document.getElementById('login-error');
-const postError = document.getElementById('post-error');
+// Giriş butonuna basınca popup aç veya prompt (basit demo)
+loginBtn.addEventListener('click', async () => {
+  const username = prompt('Kullanıcı adınızı girin:');
+  const password = prompt('Şifrenizi girin:');
 
-async function checkSession() {
-  const res = await fetch('/myposts');
-  if (res.status === 401) {
-    // Not logged in
-    authSection.classList.remove('hidden');
-    userSection.classList.add('hidden');
-  } else {
-    authSection.classList.add('hidden');
-    userSection.classList.remove('hidden');
-    const data = await res.json();
-    // Kullanıcı adı göstermek için backend'den alamıyoruz, o yüzden localStorage ile tutacağız.
-    const username = localStorage.getItem('username') || 'Kullanıcı';
-    userNameSpan.textContent = username;
-    loadPosts(data.posts);
-    loadAllPosts();
+  if (!username || !password) {
+    showMessage('Kullanıcı adı ve şifre boş olamaz.');
+    return;
   }
-}
-
-function loadPosts(posts) {
-  myPostsList.innerHTML = '';
-  if (posts.length === 0) myPostsList.innerHTML = '<li>Henüz paylaşım yok.</li>';
-  posts.forEach(p => {
-    const li = document.createElement('li');
-    li.textContent = `${p.content} (Paylaşan: ${p.username})`;
-    myPostsList.appendChild(li);
-  });
-}
-
-async function loadAllPosts() {
-  const res = await fetch('/allposts');
-  const data = await res.json();
-  allPostsList.innerHTML = '';
-  if (data.posts.length === 0) allPostsList.innerHTML = '<li>Henüz paylaşım yok.</li>';
-  data.posts.forEach(p => {
-    const li = document.createElement('li');
-    li.textContent = `${p.content} (Paylaşan: ${p.username})`;
-    allPostsList.appendChild(li);
-  });
-}
-
-signupForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  signupError.textContent = '';
-
-  const username = document.getElementById('signup-username').value.trim();
-  const password = document.getElementById('signup-password').value.trim();
-
-  const res = await fetch('/signup', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ username, password })
-  });
-
-  const data = await res.json();
-  if (data.error) {
-    signupError.textContent = data.error;
-  } else {
-    localStorage.setItem('username', username);
-    await checkSession();
-  }
-});
-
-loginForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  loginError.textContent = '';
-
-  const username = document.getElementById('login-username').value.trim();
-  const password = document.getElementById('login-password').value.trim();
 
   const res = await fetch('/login', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
   });
 
   const data = await res.json();
-  if (data.error) {
-    loginError.textContent = data.error;
+
+  if (data.success) {
+    showMessage('Giriş başarılı!', false);
   } else {
-    localStorage.setItem('username', username);
-    await checkSession();
+    showMessage(data.error || 'Bir hata oluştu.');
   }
 });
 
-logoutBtn.addEventListener('click', async () => {
-  await fetch('/logout', { method: 'POST' });
-  localStorage.removeItem('username');
-  await checkSession();
+// Kayıt ol butonuna basınca popup aç veya prompt (basit demo)
+signupBtn.addEventListener('click', async () => {
+  const username = prompt('Yeni kullanıcı adınızı girin:');
+  const password = prompt('Yeni şifrenizi girin:');
+
+  if (!username || !password) {
+    showMessage('Kullanıcı adı ve şifre boş olamaz.');
+    return;
+  }
+
+  const res = await fetch('/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    showMessage('Kayıt başarılı! Giriş yapıldı.', false);
+  } else {
+    showMessage(data.error || 'Bir hata oluştu.');
+  }
 });
 
-postForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  postError.textContent = '';
-
+// Paylaş butonuna basınca
+postBtn.addEventListener('click', async () => {
   const content = postContent.value.trim();
   if (!content) {
-    postError.textContent = 'Lütfen bir şeyler yazın.';
+    showMessage('Lütfen paylaşımınızı yazın.');
     return;
   }
 
   const res = await fetch('/post', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content })
   });
 
   const data = await res.json();
-  if (data.error) {
-    postError.textContent = data.error;
-  } else {
+
+  if (data.success) {
+    showMessage('Paylaşımınız başarıyla kaydedildi!', false);
     postContent.value = '';
-    await checkSession();
+  } else {
+    showMessage(data.error || 'Bir hata oluştu.');
   }
 });
-
-// Sayfa yüklenince oturum kontrolü yap
-checkSession();

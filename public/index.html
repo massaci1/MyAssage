@@ -7,45 +7,21 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
+
+  <header>
+    <div id="auth-buttons">
+      <button id="login-btn">Giriş</button>
+      <button id="signup-btn">Kayıt</button>
+    </div>
     <h1>MyAssage</h1>
+  </header>
 
-    <div id="auth-section">
-      <h2>Kullanıcı Girişi / Kayıt</h2>
+  <main>
+    <textarea id="post-content" placeholder="Write, Breathe, Share..."></textarea>
+    <button id="post-btn" title="Gönder 👻">👻</button>
+  </main>
 
-      <form id="signup-form">
-        <h3>Kayıt Ol</h3>
-        <input type="text" id="signup-username" placeholder="Kullanıcı adı" required />
-        <input type="password" id="signup-password" placeholder="Şifre" required />
-        <button type="submit">Kayıt Ol</button>
-        <p id="signup-error" class="error"></p>
-      </form>
-
-      <form id="login-form">
-        <h3>Giriş Yap</h3>
-        <input type="text" id="login-username" placeholder="Kullanıcı adı" required />
-        <input type="password" id="login-password" placeholder="Şifre" required />
-        <button type="submit">Giriş Yap</button>
-        <p id="login-error" class="error"></p>
-      </form>
-    </div>
-
-    <div id="user-section" class="hidden">
-      <p>Hoşgeldin, <span id="user-name"></span>! <button id="logout-btn">Çıkış Yap</button></p>
-
-      <form id="post-form">
-        <textarea id="post-content" rows="3" placeholder="Düşünceni yaz..."></textarea>
-        <button type="submit">Paylaş</button>
-        <p id="post-error" class="error"></p>
-      </form>
-
-      <h3>Paylaşımların</h3>
-      <ul id="my-posts"></ul>
-
-      <h3>Tüm Paylaşımlar</h3>
-      <ul id="all-posts"></ul>
-    </div>
-  </div>
+  <section id="messages"></section>
 
   <script src="script.js"></script>
 </body>
