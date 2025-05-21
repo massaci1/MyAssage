@@ -102,3 +102,22 @@ button#post-btn:hover {
   min-height: 24px;
   text-align: center;
 }
+/* Günlük yazı kutusu stili */
+.journal-entry {
+  background-color: white; /* Varsayılan arka plan */
+  border-left: 8px solid var(--theme-color, #1e90ff); /* Duygu rengine göre renk değişebilir */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  width: 100%;
+  max-width: 600px;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.journal-entry:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
