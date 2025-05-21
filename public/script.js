@@ -83,3 +83,51 @@ postBtn.addEventListener('click', async () => {
     showMessage(data.error || 'Bir hata oluştu.');
   }
 });
+// Yeni paylaşımı göster
+function addPostToPage(post) {
+  const section = document.createElement('div');
+  section.className = 'user-post';
+  section.innerHTML = `
+    <p><strong>${post.username}</strong> - <small>${new Date(post.time).toLocaleString()}</small></p>
+    <p>${post.text}</p>
+    <hr>
+  `;
+  document.body.appendChild(section);
+}
+
+// Sayfa yüklendiğinde mevcut paylaşımları getir
+window.addEventListener('DOMContentLoaded', async () => {
+  const res = await fetch('/allposts');
+  const posts = await res.json();
+
+  posts.forEach(post => addPostToPage(post));
+});
+
+// Paylaşım yaptıktan sonra sayfaya ekle
+postBtn.addEventListener('click', async () => {
+  const content = postContent.value.trim();
+  if (!content) {
+    showMessage('Lütfen paylaşımınızı yazın.');
+    return;
+  }
+
+  const res = await fetch('/post', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    showMessage('Paylaşımınız başarıyla kaydedildi!', false);
+    postContent.value = '';
+
+    // Yeni gönderiyi hemen sayfada göster
+    const usernameRes = await fetch('/myposts');
+    const userPosts = await usernameRes.json();
+    addPostToPage(userPosts[userPosts.length - 1]);
+  } else {
+    showMessage(data.error || 'Bir hata oluştu.');
+  }
+});
