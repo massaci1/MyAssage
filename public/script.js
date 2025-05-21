@@ -92,7 +92,7 @@ function addPostToPage(post) {
     <p>${post.text}</p>
     <hr>
   `;
-  document.body.appendChild(section);
+  document.body.prepend(section);
 }
 
 // Sayfa yüklendiğinde mevcut paylaşımları getir
