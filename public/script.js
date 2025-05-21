@@ -60,29 +60,6 @@ signupBtn.addEventListener('click', async () => {
   }
 });
 
-// Paylaş butonuna basınca
-postBtn.addEventListener('click', async () => {
-  const content = postContent.value.trim();
-  if (!content) {
-    showMessage('Lütfen paylaşımınızı yazın.');
-    return;
-  }
-
-  const res = await fetch('/post', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content })
-  });
-
-  const data = await res.json();
-
-  if (data.success) {
-    showMessage('Paylaşımınız başarıyla kaydedildi!', false);
-    postContent.value = '';
-  } else {
-    showMessage(data.error || 'Bir hata oluştu.');
-  }
-});
 // Yeni paylaşımı göster
 function addPostToPage(post) {
   const section = document.createElement('div');
@@ -92,7 +69,8 @@ function addPostToPage(post) {
     <p>${post.text}</p>
     <hr>
   `;
-  document.getElementById('post-list').prepend(section);
+  document.getElementById('post-list')
+  .prepend(section);
 }
 
 // Sayfa yüklendiğinde mevcut paylaşımları getir
