@@ -1,40 +1,104 @@
-body {
+* {
   margin: 0;
-  font-family: sans-serif;
-  text-align: center;
-  transition: background-color 0.5s ease;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f5f7fa;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #1e90ff;
+  color: white;
 }
 
 #auth-buttons {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-}
-
-textarea {
-  width: 80%;
-  height: 150px;
-  margin-top: 20px;
-  font-size: 16px;
-}
-
-button {
-  margin-top: 10px;
-  font-size: 18px;
-  padding: 10px;
-}
-
-.nav-menu {
-  position: fixed;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
-  gap: 20px;
+  gap: 10px;
 }
 
-#posts {
-  margin-top: 20px;
-  text-align: left;
-  padding: 20px;
+#auth-buttons button {
+  background: white;
+  border: none;
+  color: #1e90ff;
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#auth-buttons button:hover {
+  background: #cce4ff;
+}
+
+h1 {
+  font-weight: 700;
+  font-size: 1.8rem;
+}
+
+main {
+  flex: 1;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+textarea#post-content {
+  width: 100%;
+  max-width: 600px;
+  height: 120px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 1.2rem;
+  font-style: italic;
+  color: #888;
+  resize: none;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+textarea#post-content:focus {
+  border-color: #1e90ff;
+  color: #222;
+  font-style: normal;
+}
+
+button#post-btn {
+  margin-top: 15px;
+  background: #1e90ff;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 28px;
+  width: 56px;
+  height: 56px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button#post-btn:hover {
+  background: #005bb5;
+}
+
+#messages {
+  max-width: 600px;
+  margin: 20px auto;
+  color: red;
+  font-weight: 600;
+  min-height: 24px;
+  text-align: center;
 }
