@@ -109,3 +109,6 @@ postBtn.addEventListener('click', async () => {
     showMessage(data.error || 'Bir hata oluştu.');
   }
 });
+document.getElementById('profile-btn').addEventListener('click', () => {
+  window.location.href = '/profile';
+});
