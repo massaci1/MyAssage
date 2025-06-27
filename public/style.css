@@ -155,3 +155,12 @@ main {
   word-wrap: break-word;
   overflow-wrap: anywhere;
 }
+.emotion-badge {
+  display: inline-block;
+  background: #e0f7fa;
+  color: #00796b;
+  padding: 0.2rem 0.6rem;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}

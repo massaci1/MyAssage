@@ -93,18 +93,27 @@ app.post('/logout', (req, res) => {
 app.post('/post', (req, res) => {
   if (!req.session.user) return res.status(403).json({ error: 'Önce giriş yapmalısınız.' });
 
+  // İstekten content ve emotion'u al
   const { content, emotion } = req.body;
+
   if (!content || content.trim() === '') {
     return res.status(400).json({ error: 'Paylaşım boş olamaz.' });
   }
 
+  // Var olan paylaşımları yükle
   const entries = loadJSON(ENTRIES_FILE);
+
+  // Yeni paylaşımı ekle
   entries.push({
     username: req.session.user.username,
     text: content.trim(),
     emotion: emotion || '',
-    time: new Date().toISOString()
+    time: new Date().toISOString(),
+    likes: 0,
+    likedBy: []
   });
+
+  // Dosyaya kaydet
   saveJSON(ENTRIES_FILE, entries);
 
   res.json({ success: true });

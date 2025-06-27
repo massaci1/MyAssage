@@ -86,6 +86,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 // Paylaşım yap
 postBtn.addEventListener('click', async () => {
   const content = postContent.value.trim();
+  const emotion = document.getElementById('emotion-select').value;
   if (!content) {
     showMessage('Lütfen paylaşımınızı yazın.');
     return;
@@ -94,7 +95,7 @@ postBtn.addEventListener('click', async () => {
   const res = await fetch('/post', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, emotion }),
     credentials: 'include' // EKLENDİ
   });
 
@@ -119,12 +120,58 @@ document.getElementById('profile-btn').addEventListener('click', () => {
 function addPostToPage(post) {
   const section = document.createElement('div');
   section.className = 'user-post';
+
+  // Duygu etiketini hazırlayalım
+  const emotionLabel = post.emotion
+    ? `<span class="emotion-badge">${emojiForEmotion(post.emotion)} ${capitalize(post.emotion)}</span>`
+    : '';
+
+  // Kart içeriği
   section.innerHTML = `
     <p><strong>${post.username}</strong> - <small>${new Date(post.time).toLocaleString()}</small></p>
+    ${emotionLabel}
     <p>${post.text}</p>
     <button class="like-btn">❤️ Beğen (${post.likes || 0})</button>
     <hr>
   `;
+
+  // Beğeni butonu işlevi
+  const likeBtn = section.querySelector('.like-btn');
+  likeBtn.addEventListener('click', async () => {
+    const res = await fetch('/like', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ time: post.time }),
+      credentials: 'include'
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      likeBtn.textContent = `❤️ Beğen (${data.likes})`;
+    } else {
+      alert(data.error || 'Bir hata oluştu.');
+    }
+  });
+
+  document.getElementById('post-list').prepend(section);
+}
+
+// Yardımcı fonksiyonlar
+function emojiForEmotion(emotion) {
+  switch (emotion) {
+    case 'mutlu': return '😊';
+    case 'uzgun': return '😢';
+    case 'ofkeli': return '😡';
+    case 'heyecanli': return '😃';
+    case 'huzurlu': return '🌿';
+    case 'yalnız': return '🙁';
+    default: return '';
+  }
+}
+
+function capitalize(word) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
 
   const likeBtn = section.querySelector('.like-btn');
   likeBtn.addEventListener('click', async () => {
