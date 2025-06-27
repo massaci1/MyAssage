@@ -169,3 +169,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('profile-btn').style.display = 'none';
   }
 });
+// Profil butonuna tıklayınca profil sayfasına yönlendir
+document.getElementById('profile-btn').addEventListener('click', () => {
+  window.location.href = 'https://www.myassage.com/profile';
+});
