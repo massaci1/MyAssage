@@ -21,6 +21,13 @@ function saveJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
+// CORS AYARI
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
+// Middlewares
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -93,17 +100,14 @@ app.post('/logout', (req, res) => {
 app.post('/post', (req, res) => {
   if (!req.session.user) return res.status(403).json({ error: 'Önce giriş yapmalısınız.' });
 
-  // İstekten content ve emotion'u al
   const { content, emotion } = req.body;
 
   if (!content || content.trim() === '') {
     return res.status(400).json({ error: 'Paylaşım boş olamaz.' });
   }
 
-  // Var olan paylaşımları yükle
   const entries = loadJSON(ENTRIES_FILE);
 
-  // Yeni paylaşımı ekle
   entries.push({
     username: req.session.user.username,
     text: content.trim(),
@@ -113,10 +117,38 @@ app.post('/post', (req, res) => {
     likedBy: []
   });
 
-  // Dosyaya kaydet
   saveJSON(ENTRIES_FILE, entries);
 
   res.json({ success: true });
+});
+
+// Gönderiyi beğenme
+app.post('/like', (req, res) => {
+  if (!req.session.user) {
+    return res.status(403).json({ error: 'Önce giriş yapmalısınız.' });
+  }
+
+  const { time } = req.body;
+  const entries = loadJSON(ENTRIES_FILE);
+
+  const entry = entries.find(e => e.time === time);
+  if (!entry) {
+    return res.status(404).json({ error: 'Gönderi bulunamadı.' });
+  }
+
+  if (!entry.likedBy) entry.likedBy = [];
+  if (!entry.likes) entry.likes = 0;
+
+  if (entry.likedBy.includes(req.session.user.username)) {
+    return res.status(400).json({ error: 'Bu gönderiyi zaten beğendiniz.' });
+  }
+
+  entry.likes += 1;
+  entry.likedBy.push(req.session.user.username);
+
+  saveJSON(ENTRIES_FILE, entries);
+
+  res.json({ success: true, likes: entry.likes });
 });
 
 // Kendi paylaşımlarını listeleme
@@ -170,31 +202,4 @@ app.post('/update-bio', (req, res) => {
 // Sunucu başlat
 app.listen(PORT, () => {
   console.log(`Sunucu ${PORT} portunda çalışıyor.`);
-});
-app.post('/like', (req, res) => {
-  if (!req.session.user) {
-    return res.status(403).json({ error: 'Önce giriş yapmalısınız.' });
-  }
-
-  const { time } = req.body;
-  const entries = loadJSON(ENTRIES_FILE);
-
-  const entry = entries.find(e => e.time === time);
-  if (!entry) {
-    return res.status(404).json({ error: 'Gönderi bulunamadı.' });
-  }
-
-  if (!entry.likedBy) entry.likedBy = [];
-  if (!entry.likes) entry.likes = 0;
-
-  if (entry.likedBy.includes(req.session.user.username)) {
-    return res.status(400).json({ error: 'Bu gönderiyi zaten beğendiniz.' });
-  }
-
-  entry.likes += 1;
-  entry.likedBy.push(req.session.user.username);
-
-  saveJSON(ENTRIES_FILE, entries);
-
-  res.json({ success: true, likes: entry.likes });
 });
