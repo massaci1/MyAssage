@@ -150,3 +150,8 @@ main {
     width: 100%;
   }
 }
+/* Uzun kelimelerin kutudan taşmasını engelle */
+.user-post p {
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}

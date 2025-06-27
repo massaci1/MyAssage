@@ -116,3 +116,32 @@ postBtn.addEventListener('click', async () => {
 document.getElementById('profile-btn').addEventListener('click', () => {
   window.location.href = '/profile';
 });
+function addPostToPage(post) {
+  const section = document.createElement('div');
+  section.className = 'user-post';
+  section.innerHTML = `
+    <p><strong>${post.username}</strong> - <small>${new Date(post.time).toLocaleString()}</small></p>
+    <p>${post.text}</p>
+    <button class="like-btn">❤️ Beğen (${post.likes || 0})</button>
+    <hr>
+  `;
+
+  const likeBtn = section.querySelector('.like-btn');
+  likeBtn.addEventListener('click', async () => {
+    const res = await fetch('/like', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ time: post.time }),
+      credentials: 'include'
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      likeBtn.textContent = `❤️ Beğen (${data.likes})`;
+    } else {
+      alert(data.error || 'Bir hata oluştu.');
+    }
+  });
+
+  document.getElementById('post-list').prepend(section);
+}

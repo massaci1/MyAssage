@@ -162,3 +162,30 @@ app.post('/update-bio', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Sunucu ${PORT} portunda çalışıyor.`);
 });
+app.post('/like', (req, res) => {
+  if (!req.session.user) {
+    return res.status(403).json({ error: 'Önce giriş yapmalısınız.' });
+  }
+
+  const { time } = req.body;
+  const entries = loadJSON(ENTRIES_FILE);
+
+  const entry = entries.find(e => e.time === time);
+  if (!entry) {
+    return res.status(404).json({ error: 'Gönderi bulunamadı.' });
+  }
+
+  if (!entry.likedBy) entry.likedBy = [];
+  if (!entry.likes) entry.likes = 0;
+
+  if (entry.likedBy.includes(req.session.user.username)) {
+    return res.status(400).json({ error: 'Bu gönderiyi zaten beğendiniz.' });
+  }
+
+  entry.likes += 1;
+  entry.likedBy.push(req.session.user.username);
+
+  saveJSON(ENTRIES_FILE, entries);
+
+  res.json({ success: true, likes: entry.likes });
+});
