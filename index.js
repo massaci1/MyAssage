@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const cors = require('cors');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const path = require('path');
