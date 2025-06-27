@@ -10,7 +10,7 @@ function showMessage(text, isError = true) {
   setTimeout(() => messages.textContent = '', 4000);
 }
 
-// Giriş butonuna basınca
+// Giriş
 loginBtn.addEventListener('click', async () => {
   const username = prompt('Kullanıcı adınızı girin:');
   const password = prompt('Şifrenizi girin:');
@@ -24,7 +24,7 @@ loginBtn.addEventListener('click', async () => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
-    credentials: 'include' // EKLENDİ
+    credentials: 'include'
   });
 
   const data = await res.json();
@@ -36,7 +36,7 @@ loginBtn.addEventListener('click', async () => {
   }
 });
 
-// Kayıt ol butonuna basınca
+// Kayıt
 signupBtn.addEventListener('click', async () => {
   const username = prompt('Yeni kullanıcı adınızı girin:');
   const password = prompt('Yeni şifrenizi girin:');
@@ -50,7 +50,7 @@ signupBtn.addEventListener('click', async () => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
-    credentials: 'include' // EKLENDİ
+    credentials: 'include'
   });
 
   const data = await res.json();
@@ -62,71 +62,15 @@ signupBtn.addEventListener('click', async () => {
   }
 });
 
-// Yeni paylaşımı göster
-function addPostToPage(post) {
-  const section = document.createElement('div');
-  section.className = 'user-post';
-  section.innerHTML = `
-    <p><strong>${post.username}</strong> - <small>${new Date(post.time).toLocaleString()}</small></p>
-    <p>${post.text}</p>
-    <hr>
-  `;
-  document.getElementById('post-list')
-  .prepend(section);
-}
-
-// Sayfa yüklendiğinde mevcut paylaşımları getir
-window.addEventListener('DOMContentLoaded', async () => {
-  const res = await fetch('/allposts', { credentials: 'include' }); // EKLENDİ
-  const posts = await res.json();
-
-  posts.forEach(post => addPostToPage(post));
-});
-
-// Paylaşım yap
-postBtn.addEventListener('click', async () => {
-  const content = postContent.value.trim();
-  const emotion = document.getElementById('emotion-select').value;
-  if (!content) {
-    showMessage('Lütfen paylaşımınızı yazın.');
-    return;
-  }
-
-  const res = await fetch('/post', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, emotion }),
-    credentials: 'include' // EKLENDİ
-  });
-
-  const data = await res.json();
-
-  if (data.success) {
-    showMessage('Paylaşımınız başarıyla kaydedildi!', false);
-    postContent.value = '';
-
-    // Yeni gönderiyi hemen sayfaya ekle
-    const usernameRes = await fetch('/myposts', { credentials: 'include' }); // EKLENDİ
-    const userPosts = await usernameRes.json();
-    addPostToPage(userPosts[userPosts.length - 1]);
-  } else {
-    showMessage(data.error || 'Bir hata oluştu.');
-  }
-});
-
-document.getElementById('profile-btn').addEventListener('click', () => {
-  window.location.href = '/profile';
-});
+// Yeni paylaşımı sayfaya ekle
 function addPostToPage(post) {
   const section = document.createElement('div');
   section.className = 'user-post';
 
-  // Duygu etiketini hazırlayalım
   const emotionLabel = post.emotion
     ? `<span class="emotion-badge">${emojiForEmotion(post.emotion)} ${capitalize(post.emotion)}</span>`
     : '';
 
-  // Kart içeriği
   section.innerHTML = `
     <p><strong>${post.username}</strong> - <small>${new Date(post.time).toLocaleString()}</small></p>
     ${emotionLabel}
@@ -135,7 +79,6 @@ function addPostToPage(post) {
     <hr>
   `;
 
-  // Beğeni butonu işlevi
   const likeBtn = section.querySelector('.like-btn');
   likeBtn.addEventListener('click', async () => {
     const res = await fetch('/like', {
@@ -156,6 +99,45 @@ function addPostToPage(post) {
   document.getElementById('post-list').prepend(section);
 }
 
+// Paylaşım butonu
+postBtn.addEventListener('click', async () => {
+  const content = postContent.value.trim();
+  const emotion = document.getElementById('emotion-select').value;
+
+  if (!content) {
+    showMessage('Lütfen paylaşımınızı yazın.');
+    return;
+  }
+
+  const res = await fetch('/post', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content, emotion }),
+    credentials: 'include'
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    showMessage('Paylaşımınız başarıyla kaydedildi!', false);
+    postContent.value = '';
+    document.getElementById('emotion-select').value = '';
+
+    const usernameRes = await fetch('/myposts', { credentials: 'include' });
+    const userPosts = await usernameRes.json();
+    addPostToPage(userPosts[userPosts.length - 1]);
+  } else {
+    showMessage(data.error || 'Bir hata oluştu.');
+  }
+});
+
+// Sayfa açıldığında gönderileri getir
+window.addEventListener('DOMContentLoaded', async () => {
+  const res = await fetch('/allposts', { credentials: 'include' });
+  const posts = await res.json();
+  posts.forEach(post => addPostToPage(post));
+});
+
 // Yardımcı fonksiyonlar
 function emojiForEmotion(emotion) {
   switch (emotion) {
@@ -172,22 +154,18 @@ function emojiForEmotion(emotion) {
 function capitalize(word) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
-
-  likeBtn.addEventListener('click', async () => {
-  const res = await fetch('/like', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ time: post.time }),
-    credentials: 'include'
-  });
-
+// Sayfa açıldığında oturum durumunu kontrol et
+window.addEventListener('DOMContentLoaded', async () => {
+  const res = await fetch('/session-status', { credentials: 'include' });
   const data = await res.json();
-  if (data.success) {
-    likeBtn.textContent = `❤️ Beğen (${data.likes})`;
-  } else {
-    alert(data.error || 'Bir hata oluştu.');
-  }
-}); // <- BU satır burada bitmeli!
 
-// DİKKAT: Bu satır event listener'ın DIŞINDA kalmalı
-document.getElementById('post-list').prepend(section);
+  if (data.loggedIn) {
+    document.getElementById('login-btn').style.display = 'none';
+    document.getElementById('signup-btn').style.display = 'none';
+    document.getElementById('profile-btn').style.display = 'inline-block';
+  } else {
+    document.getElementById('login-btn').style.display = 'inline-block';
+    document.getElementById('signup-btn').style.display = 'inline-block';
+    document.getElementById('profile-btn').style.display = 'none';
+  }
+});

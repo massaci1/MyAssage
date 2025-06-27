@@ -204,6 +204,14 @@ app.post('/update-bio', (req, res) => {
   res.json({ success: true });
 });
 
+app.get('/session-status', (req, res) => {
+  if (req.session.user) {
+    res.json({ loggedIn: true, username: req.session.user.username });
+  } else {
+    res.json({ loggedIn: false });
+  }
+});
+
 // Sunucu başlat
 app.listen(PORT, () => {
   console.log(`Sunucu ${PORT} portunda çalışıyor.`);
