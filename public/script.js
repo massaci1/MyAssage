@@ -173,22 +173,21 @@ function capitalize(word) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
-  const likeBtn = section.querySelector('.like-btn');
   likeBtn.addEventListener('click', async () => {
-    const res = await fetch('/like', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ time: post.time }),
-      credentials: 'include'
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      likeBtn.textContent = `❤️ Beğen (${data.likes})`;
-    } else {
-      alert(data.error || 'Bir hata oluştu.');
-    }
+  const res = await fetch('/like', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ time: post.time }),
+    credentials: 'include'
   });
 
-  document.getElementById('post-list').prepend(section);
-}
+  const data = await res.json();
+  if (data.success) {
+    likeBtn.textContent = `❤️ Beğen (${data.likes})`;
+  } else {
+    alert(data.error || 'Bir hata oluştu.');
+  }
+}); // <- BU satır burada bitmeli!
+
+// DİKKAT: Bu satır event listener'ın DIŞINDA kalmalı
+document.getElementById('post-list').prepend(section);
