@@ -10,7 +10,7 @@ function showMessage(text, isError = true) {
   setTimeout(() => messages.textContent = '', 4000);
 }
 
-// Giriş butonuna basınca popup aç veya prompt (basit demo)
+// Giriş butonuna basınca
 loginBtn.addEventListener('click', async () => {
   const username = prompt('Kullanıcı adınızı girin:');
   const password = prompt('Şifrenizi girin:');
@@ -23,7 +23,8 @@ loginBtn.addEventListener('click', async () => {
   const res = await fetch('/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password })
+    body: JSON.stringify({ username, password }),
+    credentials: 'include' // EKLENDİ
   });
 
   const data = await res.json();
@@ -35,7 +36,7 @@ loginBtn.addEventListener('click', async () => {
   }
 });
 
-// Kayıt ol butonuna basınca popup aç veya prompt (basit demo)
+// Kayıt ol butonuna basınca
 signupBtn.addEventListener('click', async () => {
   const username = prompt('Yeni kullanıcı adınızı girin:');
   const password = prompt('Yeni şifrenizi girin:');
@@ -48,7 +49,8 @@ signupBtn.addEventListener('click', async () => {
   const res = await fetch('/signup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password })
+    body: JSON.stringify({ username, password }),
+    credentials: 'include' // EKLENDİ
   });
 
   const data = await res.json();
@@ -75,13 +77,13 @@ function addPostToPage(post) {
 
 // Sayfa yüklendiğinde mevcut paylaşımları getir
 window.addEventListener('DOMContentLoaded', async () => {
-  const res = await fetch('/allposts');
+  const res = await fetch('/allposts', { credentials: 'include' }); // EKLENDİ
   const posts = await res.json();
 
   posts.forEach(post => addPostToPage(post));
 });
 
-// Paylaşım yaptıktan sonra sayfaya ekle
+// Paylaşım yap
 postBtn.addEventListener('click', async () => {
   const content = postContent.value.trim();
   if (!content) {
@@ -92,7 +94,8 @@ postBtn.addEventListener('click', async () => {
   const res = await fetch('/post', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content })
+    body: JSON.stringify({ content }),
+    credentials: 'include' // EKLENDİ
   });
 
   const data = await res.json();
@@ -101,14 +104,15 @@ postBtn.addEventListener('click', async () => {
     showMessage('Paylaşımınız başarıyla kaydedildi!', false);
     postContent.value = '';
 
-    // Yeni gönderiyi hemen sayfada göster
-    const usernameRes = await fetch('/myposts');
+    // Yeni gönderiyi hemen sayfaya ekle
+    const usernameRes = await fetch('/myposts', { credentials: 'include' }); // EKLENDİ
     const userPosts = await usernameRes.json();
     addPostToPage(userPosts[userPosts.length - 1]);
   } else {
     showMessage(data.error || 'Bir hata oluştu.');
   }
 });
+
 document.getElementById('profile-btn').addEventListener('click', () => {
   window.location.href = '/profile';
 });
