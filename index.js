@@ -183,6 +183,11 @@ app.get('/profile-data', (req, res) => {
   });
 });
 
+app.get('/profile', (req, res) => {
+  if (!req.session.user) return res.redirect('/');
+  res.sendFile(path.join(__dirname, 'public/profile.html'));
+});
+
 // Bio güncelleme
 app.post('/update-bio', (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: 'Giriş yapmadınız.' });

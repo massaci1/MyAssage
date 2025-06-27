@@ -164,3 +164,17 @@ main {
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
 }
+#profile-info {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+}
+#bio-input {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+#update-bio-btn {
+  margin-top: 0.5rem;
+}
