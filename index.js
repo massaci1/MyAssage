@@ -10,12 +10,12 @@ const PORT = process.env.PORT || 3000;
 const USERS_FILE = path.join(__dirname, 'users.json');
 const ENTRIES_FILE = path.join(__dirname, 'entries.json');
 
-// JSON dosyasından yükle
+// JSON dosyası yükleme
 function loadJSON(file) {
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf-8')) : [];
 }
 
-// JSON dosyasına kaydet
+// JSON dosyası kaydetme
 function saveJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
@@ -39,62 +39,69 @@ app.get('/', (req, res) => {
 // Kayıt olma
 app.post('/signup', async (req, res) => {
   const { username, password } = req.body;
+  const users = loadJSON(USERS_FILE);
 
-  // Burada yeni ekleme:
-  const bio = ""; // Başlangıçta boş bio veriyoruz
-  const registeredAt = new Date(); // Kayıt tarihi şu an
-
-  // Kayıt işlemi sırasında username, password, bio ve registeredAt kaydedilecek
-  try {
-    // Örneğin MongoDB kullanıyorsan şöyle olabilir:
-    await usersCollection.insertOne({
-      username,
-      password,  // (şifreyi hash’lemen lazım, bu sadece örnek)
-      bio,
-      registeredAt,
-    });
-
-    // Kayıt başarılı ise:
-    res.json({ success: true });
-
-  } catch (err) {
-    res.json({ success: false, error: 'Kayıt sırasında hata oluştu.' });
+  if (users.find(u => u.username === username)) {
+    return res.status(400).json({ error: 'Bu kullanıcı adı zaten alınmış.' });
   }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const newUser = {
+    username,
+    password: hashedPassword,
+    bio: '',
+    registeredAt: new Date().toISOString()
+  };
+
+  users.push(newUser);
+  saveJSON(USERS_FILE, users);
+
+  res.json({ success: true });
 });
 
 // Giriş yapma
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const users = loadJSON(USERS_FILE);
-  const user = users.find(u => u.username === username);
 
+  const user = users.find(u => u.username === username);
   if (!user) return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre.' });
 
   const match = await bcrypt.compare(password, user.password);
   if (!match) return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre.' });
 
-  req.session.username = username;
+  req.session.user = {
+    username: user.username,
+    registeredAt: user.registeredAt,
+    bio: user.bio
+  };
+
   res.json({ success: true });
 });
 
 // Çıkış yapma
 app.post('/logout', (req, res) => {
-  req.session.destroy(() => {
+  req.session.destroy(err => {
+    if (err) return res.status(500).json({ error: 'Çıkış yapılamadı.' });
     res.json({ success: true });
   });
 });
 
 // Yeni paylaşım ekleme
 app.post('/post', (req, res) => {
-  if (!req.session.username) return res.status(403).json({ error: 'Önce giriş yapmalısınız.' });
+  if (!req.session.user) return res.status(403).json({ error: 'Önce giriş yapmalısınız.' });
 
-  const { content } = req.body;
-  if (!content || content.trim() === '') return res.status(400).json({ error: 'Paylaşım boş olamaz.' });
+  const { content, emotion } = req.body;
+  if (!content || content.trim() === '') {
+    return res.status(400).json({ error: 'Paylaşım boş olamaz.' });
+  }
 
   const entries = loadJSON(ENTRIES_FILE);
   entries.push({
-    username: req.session.username,
+    username: req.session.user.username,
     text: content.trim(),
+    emotion: emotion || '',
     time: new Date().toISOString()
   });
   saveJSON(ENTRIES_FILE, entries);
@@ -102,12 +109,12 @@ app.post('/post', (req, res) => {
   res.json({ success: true });
 });
 
-// Kendi paylaşımlarını listele
+// Kendi paylaşımlarını listeleme
 app.get('/myposts', (req, res) => {
-  if (!req.session.username) return res.status(401).json({ error: 'Giriş yapmadınız.' });
+  if (!req.session.user) return res.status(401).json({ error: 'Giriş yapmadınız.' });
 
   const entries = loadJSON(ENTRIES_FILE);
-  const userEntries = entries.filter(e => e.username === req.session.username);
+  const userEntries = entries.filter(e => e.username === req.session.user.username);
   res.json(userEntries);
 });
 
@@ -117,63 +124,40 @@ app.get('/allposts', (req, res) => {
   res.json(entries);
 });
 
-app.listen(PORT, () => {
-  console.log(`Sunucu ${PORT} portunda çalışıyor.`);
-});
+// Profil bilgisi getirme
 app.get('/profile-data', (req, res) => {
-  if (!req.session.user) return res.status(401).json({ error: 'Yetkisiz' });
+  if (!req.session.user) return res.status(401).json({ error: 'Giriş yapmadınız.' });
 
-  const user = users[req.session.user];
-  const userPosts = posts.filter(p => p.username === req.session.user);
+  const users = loadJSON(USERS_FILE);
+  const user = users.find(u => u.username === req.session.user.username);
+  const entries = loadJSON(ENTRIES_FILE);
+  const userEntries = entries.filter(e => e.username === req.session.user.username);
 
   res.json({
-    username: req.session.user,
+    username: user.username,
     registeredAt: user.registeredAt,
-    bio: user.bio || '',
-    postCount: userPosts.length
+    bio: user.bio,
+    postCount: userEntries.length
   });
 });
+
+// Bio güncelleme
 app.post('/update-bio', (req, res) => {
-  if (!req.session.user) return res.status(401).json({ error: 'Yetkisiz' });
+  if (!req.session.user) return res.status(401).json({ error: 'Giriş yapmadınız.' });
 
   const { bio } = req.body;
-  users[req.session.user].bio = bio;
-  res.json({ success: true });
-});
-app.get('/profile', (req, res) => {
-  if (!req.session.user) return res.redirect('/');
-  res.sendFile(__dirname + '/profile.html');
-});
-// Profil bilgilerini JSON olarak gönder
-app.get('/profile/data', (req, res) => {
-  if (!req.session.user) return res.status(401).json({ error: 'Oturum yok' });
+  const users = loadJSON(USERS_FILE);
+  const user = users.find(u => u.username === req.session.user.username);
 
-  res.json({
-    username: req.session.user.username,
-    registerDate: req.session.user.registerDate,
-    bio: req.session.user.bio || '',
-  });
-});
+  user.bio = bio;
+  saveJSON(USERS_FILE, users);
 
-// Bio güncelleme endpoint’i
-app.post('/profile/update-bio', (req, res) => {
-  if (!req.session.user) return res.status(401).json({ error: 'Oturum yok' });
-
-  const newBio = req.body.bio || '';
-
-  // Burada session’daki bio’yu güncelle
-  req.session.user.bio = newBio;
-
-  // İstersen gerçek veritabanında da güncelle
-  // Örneğin: usersDB.update(req.session.user.username, { bio: newBio });
+  req.session.user.bio = bio;
 
   res.json({ success: true });
 });
 
-// Çıkış yapma (session temizleme)
-app.post('/logout', (req, res) => {
-  req.session.destroy(err => {
-    if (err) return res.status(500).json({ error: 'Çıkış yapılamadı.' });
-    res.json({ success: true });
-  });
+// Sunucu başlat
+app.listen(PORT, () => {
+  console.log(`Sunucu ${PORT} portunda çalışıyor.`);
 });
