@@ -21,13 +21,21 @@ function saveJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-// CORS AYARI
+// Skor hesaplama algoritması
+function calculateScore(post) {
+  const likeScore = post.likes || 0;
+  const lengthScore = post.text.length / 100;
+  const ageInDays = (Date.now() - new Date(post.time)) / (1000 * 60 * 60 * 24);
+  return (1 * likeScore) + (0.3 * lengthScore) - (0.1 * ageInDays);
+}
+
+// CORS
 app.use(cors({
   origin: true,
   credentials: true
 }));
 
-// Middlewares
+// Middleware
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -36,7 +44,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'myassage-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 } // 1 gün
+  cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
 // Anasayfa
@@ -54,7 +62,6 @@ app.post('/signup', async (req, res) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-
   const newUser = {
     username,
     password: hashedPassword,
@@ -72,7 +79,6 @@ app.post('/signup', async (req, res) => {
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const users = loadJSON(USERS_FILE);
-
   const user = users.find(u => u.username === username);
   if (!user) return res.status(401).json({ error: 'Geçersiz kullanıcı adı veya şifre.' });
 
@@ -101,7 +107,6 @@ app.post('/post', (req, res) => {
   if (!req.session.user) return res.status(403).json({ error: 'Önce giriş yapmalısınız.' });
 
   const { content, emotion } = req.body;
-
   if (!content || content.trim() === '') {
     return res.status(400).json({ error: 'Paylaşım boş olamaz.' });
   }
@@ -130,25 +135,17 @@ app.post('/like', (req, res) => {
 
   const { time } = req.body;
   const entries = loadJSON(ENTRIES_FILE);
-
   const entry = entries.find(e => e.time === time);
-  if (!entry) {
-    return res.status(404).json({ error: 'Gönderi bulunamadı.' });
-  }
+  if (!entry) return res.status(404).json({ error: 'Gönderi bulunamadı.' });
 
-  if (!entry.likedBy) entry.likedBy = [];
-  if (!entry.likes) entry.likes = 0;
-
-  if (entry.likedBy.includes(req.session.user.username)) {
+  if (!entry.likedBy.includes(req.session.user.username)) {
+    entry.likes += 1;
+    entry.likedBy.push(req.session.user.username);
+    saveJSON(ENTRIES_FILE, entries);
+    return res.json({ success: true, likes: entry.likes });
+  } else {
     return res.status(400).json({ error: 'Bu gönderiyi zaten beğendiniz.' });
   }
-
-  entry.likes += 1;
-  entry.likedBy.push(req.session.user.username);
-
-  saveJSON(ENTRIES_FILE, entries);
-
-  res.json({ success: true, likes: entry.likes });
 });
 
 // Kendi paylaşımlarını listeleme
@@ -160,10 +157,11 @@ app.get('/myposts', (req, res) => {
   res.json(userEntries);
 });
 
-// Tüm paylaşımlar
+// Tüm paylaşımlar (skora göre sıralanmış)
 app.get('/allposts', (req, res) => {
   const entries = loadJSON(ENTRIES_FILE);
-  res.json(entries);
+  const sorted = entries.sort((a, b) => calculateScore(b) - calculateScore(a));
+  res.json(sorted);
 });
 
 // Profil bilgisi getirme
@@ -183,6 +181,7 @@ app.get('/profile-data', (req, res) => {
   });
 });
 
+// Profil sayfası
 app.get('/profile', (req, res) => {
   if (!req.session.user) return res.redirect('/');
   res.sendFile(path.join(__dirname, 'public/profile.html'));
@@ -198,12 +197,12 @@ app.post('/update-bio', (req, res) => {
 
   user.bio = bio;
   saveJSON(USERS_FILE, users);
-
   req.session.user.bio = bio;
 
   res.json({ success: true });
 });
 
+// Oturum durumu kontrolü
 app.get('/session-status', (req, res) => {
   if (req.session.user) {
     res.json({ loggedIn: true, username: req.session.user.username });
